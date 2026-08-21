@@ -15,6 +15,7 @@ public class ProdutosController : ControllerBase
     {
         _produtoService = produtoService;
     }
+
     [HttpPost(Name = "CreateProduto")]
     public async Task<ActionResult<ProdutoCriadoDTO>> CreateProduto(ProdutoCriadoDTO produtoDTO)
     {
@@ -34,7 +35,56 @@ public class ProdutosController : ControllerBase
         }
         return StatusCode(StatusCodes.Status201Created, produtoDTO);
     }
-    [HttpPost("atualizar-produto", Name = "AtualizarProduto")]
+
+    [HttpGet("{id}", Name = "GetProdutoById")]
+    public async Task<ActionResult<ProdutoResponseDTO>> GetProdutoById(int id)
+    {
+        try
+        {
+            var produto = await _produtoService.GetProdutoByIdAsync(id);
+            if (produto == null)
+            {
+                return NotFound();
+            }
+            var produtoResponseDTO = new ProdutoResponseDTO
+            {
+                Id = produto.Id,
+                Codigo = produto.Codigo,
+                Descricao = produto.Descricao,
+                Saldo = produto.Saldo
+            };
+            return Ok(produtoResponseDTO);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet("todos", Name = "GetAllProdutos")]
+    public async Task<ActionResult<IEnumerable<ProdutoResponseDTO>>> GetAllProdutos()
+    {
+        try
+        {
+            var produtos = await _produtoService.GetAllProdutosAsync();
+
+            var produtosResponseDTO = produtos.Select(produto => new ProdutoResponseDTO
+            {
+                Id = produto.Id,
+                Codigo = produto.Codigo,
+                Descricao = produto.Descricao,
+                Saldo = produto.Saldo
+            }).ToList();
+
+            return Ok(produtosResponseDTO);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPut("atualizar-produto", Name = "AtualizarProduto")]
     public async Task<ActionResult<ProdutoAtualizadoDTO>> AtualizarProduto(ProdutoAtualizadoDTO produtoAtualizadoDTO)
     {
         try
@@ -50,5 +100,19 @@ public class ProdutosController : ControllerBase
             return BadRequest(ex.Message);
         }
         return Ok();
+    }
+
+    [HttpPost("desativar-produto/{id}", Name = "DesativarProduto")]
+    public async Task<ActionResult<int>> DesativarProduto(int id)
+    {
+        try
+        {
+            await _produtoService.DesativarProdutoAsync(id);
+            return Ok(id);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }

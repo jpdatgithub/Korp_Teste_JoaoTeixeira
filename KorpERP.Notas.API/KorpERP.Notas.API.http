@@ -1,0 +1,6 @@
+@KorpERP.Notas.API_HostAddress = http://localhost:5081
+
+GET {{KorpERP.Notas.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

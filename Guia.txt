@@ -1,0 +1,1 @@
+Agora falta só preencher os controllers. De notas e de produtos. E então o back end deve estar completo. 

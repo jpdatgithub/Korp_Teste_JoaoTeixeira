@@ -6,7 +6,7 @@ namespace KorpERP.Notas.API.Interfaces;
 
 public interface INotasService
 {
-    Task<Nota> CreateNotaAsync(List<NotaFiscalItem> itens);
+    Task<Nota> CreateNotaAsync(List<SharedNotaFiscalItem> itens);
     Task<Nota> GetNotaByIdAsync(int notaId);
     Task<List<Nota>> GetAllNotasAsync();
     Task<Nota> AtualizarNotaAsync(int notaId, List<NotaFiscalItem> novosItens);

@@ -51,7 +51,7 @@ namespace KorpERP.Produtos.API.Services
 
             if (produto == null)
             {
-                throw new Exception($"Produto com ID {produtoId} não encontrado.");
+                throw new KeyNotFoundException($"Produto com ID {produtoId} não encontrado.");
             }
 
             bool saldoAlterado = produto.Saldo != novoSaldo;
@@ -93,7 +93,7 @@ namespace KorpERP.Produtos.API.Services
 
             if (produto == null)
             {
-                throw new Exception($"Produto com ID {produtoId} não encontrado.");
+                throw new KeyNotFoundException($"Produto com ID {produtoId} não encontrado.");
             }
 
             return produto;
@@ -108,7 +108,7 @@ namespace KorpERP.Produtos.API.Services
 
             if (produto == null)
             {
-                throw new Exception($"Produto com ID {produtoId} não encontrado.");
+                throw new KeyNotFoundException($"Produto com ID {produtoId} não encontrado.");
             }
 
             produto.Status = StatusProduto.Inativo;

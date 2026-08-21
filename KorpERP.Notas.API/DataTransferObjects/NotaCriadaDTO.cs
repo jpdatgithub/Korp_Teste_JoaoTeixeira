@@ -1,4 +1,4 @@
-using KorpERP.Notas.API.Models;
+using KorpERP.Shared.Contracts.NotaFiscal;
 
 namespace KorpERP.Notas.API.DataTransferObjects
 {

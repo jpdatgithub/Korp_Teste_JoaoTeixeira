@@ -55,6 +55,10 @@ public class ProdutosController : ControllerBase
             };
             return Ok(produtoResponseDTO);
         }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
@@ -95,6 +99,10 @@ public class ProdutosController : ControllerBase
             produtoAtualizadoDTO.NovoCodigo,
             produtoAtualizadoDTO.NovoDescricao);
         }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
@@ -109,6 +117,10 @@ public class ProdutosController : ControllerBase
         {
             await _produtoService.DesativarProdutoAsync(id);
             return Ok(id);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {

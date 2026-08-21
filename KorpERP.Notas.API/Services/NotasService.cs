@@ -20,13 +20,21 @@ public class NotasService : INotasService
         _eventPublisher = eventPublisher;
     }
 
-    public async Task<Nota> CreateNotaAsync(List<NotaFiscalItem> itens)
+    public async Task<Nota> CreateNotaAsync(List<SharedNotaFiscalItem> itens)
     {
-        var nota = new Nota
+        var nota = new Nota { };
+
+        foreach (var item in itens)
         {
-            Itens = itens,
-            DataCriacao = DateTime.UtcNow
-        };
+            var notaFiscalItem = new NotaFiscalItem
+            {
+                ProdutoId = item.ProdutoId,
+                Quantidade = item.Quantidade,
+                Nota = nota
+                //supostamente deve preencher o notaId automaticamente com base na Nota quando salvar
+            };
+            nota.Itens.Add(notaFiscalItem);
+        }
 
         _context.Notas.Add(nota);
         await _context.SaveChangesAsync();
@@ -41,7 +49,7 @@ public class NotasService : INotasService
 
         if (nota == null)
         {
-            throw new Exception($"Nota com ID {notaId} não encontrada.");
+            throw new KeyNotFoundException($"Nota com ID {notaId} não encontrada.");
         }
 
         return nota;
@@ -60,7 +68,7 @@ public class NotasService : INotasService
 
         if (nota == null)
         {
-            throw new Exception($"Nota com ID {notaId} não encontrada.");
+            throw new KeyNotFoundException($"Nota com ID {notaId} não encontrada.");
         }
 
         nota.Itens = novosItens;
@@ -75,7 +83,7 @@ public class NotasService : INotasService
 
         if (nota == null)
         {
-            throw new Exception($"Nota com ID {notaId} não encontrada.");
+            throw new KeyNotFoundException($"Nota com ID {notaId} não encontrada.");
         }
 
         if (nota.Status == SharedStatusNota.Fechada)
@@ -96,7 +104,7 @@ public class NotasService : INotasService
 
         if (nota == null)
         {
-            throw new Exception($"Nota com ID {notaId} não encontrada.");
+            throw new KeyNotFoundException($"Nota com ID {notaId} não encontrada.");
         }
 
         if (nota.Status == SharedStatusNota.Fechada)
@@ -130,7 +138,7 @@ public class NotasService : INotasService
 
         if (nota == null)
         {
-            throw new Exception($"Nota com ID {notaId} não encontrada.");
+            throw new KeyNotFoundException($"Nota com ID {notaId} não encontrada.");
         }
 
         foreach (var item in eventItensFalhados)

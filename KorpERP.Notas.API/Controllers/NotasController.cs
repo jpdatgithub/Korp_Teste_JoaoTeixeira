@@ -15,12 +15,12 @@ public class NotasController : ControllerBase
         _notasService = notasService;
     }
     [HttpPost(Name = "CreateNota")]
-    public async Task<ActionResult<NotaCriadaDTO>> CreateNota(NotaCriadaDTO notaCriadaDTO)
+    public async Task<ActionResult<NotaResponseDTO>> CreateNota(NotaCriadaDTO notaCriadaDTO)
     {
         try
         {
             var notaCriada = await _notasService.CreateNotaAsync(notaCriadaDTO.Itens);
-            return StatusCode(StatusCodes.Status201Created, notaCriada);
+            return StatusCode(StatusCodes.Status201Created, MapToDTO(notaCriada));
         }
         catch (Exception ex)
         {
@@ -29,12 +29,12 @@ public class NotasController : ControllerBase
     }
 
     [HttpPut(Name = "AtualizarNota")]
-    public async Task<ActionResult<NotaAtualizadaDTO>> AtualizarNota(NotaAtualizadaDTO notaAtualizada)
+    public async Task<ActionResult<NotaResponseDTO>> AtualizarNota(NotaAtualizadaDTO notaAtualizada)
     {
         try
         {
             var notaAtualizadaResult = await _notasService.AtualizarNotaAsync(notaAtualizada.NotaId, notaAtualizada.Itens);
-            return StatusCode(StatusCodes.Status200OK, notaAtualizadaResult);
+            return Ok(MapToDTO(notaAtualizadaResult));
         }
         catch (KeyNotFoundException ex)
         {
@@ -69,12 +69,12 @@ public class NotasController : ControllerBase
     }
 
     [HttpGet("{notaId}", Name = "GetNotaById")]
-    public async Task<ActionResult<Nota>> GetNotaById(int notaId)
+    public async Task<ActionResult<NotaResponseDTO>> GetNotaById(int notaId)
     {
         try
         {
             var nota = await _notasService.GetNotaByIdAsync(notaId);
-            return Ok(nota);
+            return Ok(MapToDTO(nota));
         }
         catch (KeyNotFoundException ex)
         {
@@ -87,12 +87,12 @@ public class NotasController : ControllerBase
     }
 
     [HttpGet("todos", Name = "GetAllNotas")]
-    public async Task<ActionResult<IEnumerable<Nota>>> GetAllNotas()
+    public async Task<ActionResult<IEnumerable<NotaResponseDTO>>> GetAllNotas()
     {
         try
         {
             var notas = await _notasService.GetAllNotasAsync();
-            return Ok(notas);
+            return Ok(notas.Select(MapToDTO));
         }
         catch (Exception ex)
         {
@@ -101,12 +101,12 @@ public class NotasController : ControllerBase
     }
 
     [HttpPost("{notaId}/processar", Name = "ProcessarNota")]
-    public async Task<ActionResult<Nota>> ProcessarNota(int notaId)
+    public async Task<ActionResult<NotaResponseDTO>> ProcessarNota(int notaId)
     {
         try
         {
             var notaProcessada = await _notasService.ProcessarNotaAsync(notaId);
-            return Ok(notaProcessada);
+            return Ok(MapToDTO(notaProcessada));
         }
         catch (KeyNotFoundException ex)
         {
@@ -120,5 +120,33 @@ public class NotasController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
+    }
+
+    private static NotaResponseDTO MapToDTO(Nota nota)
+    {
+        return new NotaResponseDTO
+        {
+            Id = nota.Id,
+            DataCriacao = nota.DataCriacao,
+            DataFechamento = nota.DataFechamento,
+            Status = nota.Status,
+            EmProcessamento = nota.EmProcessamento,
+            Itens = nota.Itens.Select(item => new NotaFiscalItemResponseDTO
+            {
+                ProdutoId = item.ProdutoId,
+                Quantidade = item.Quantidade
+            }).ToList(),
+            ItensOk = nota.ItensProcessados.Select(item => new NotaFiscalItemResponseDTO
+            {
+                ProdutoId = item.ProdutoId,
+                Quantidade = item.Quantidade
+            }).ToList(),
+            ItensFalhados = nota.ItensFalhados.Select(item => new NotaFiscalItemFalhouResponseDTO
+            {
+                ProdutoId = item.ProdutoId,
+                Quantidade = item.Quantidade,
+                MotivoFalha = item.MotivoFalha
+            }).ToList()
+        };
     }
 }

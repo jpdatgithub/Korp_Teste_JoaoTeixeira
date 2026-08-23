@@ -51,7 +51,8 @@ public class ProdutosController : ControllerBase
                 Id = produto.Id,
                 Codigo = produto.Codigo,
                 Descricao = produto.Descricao,
-                Saldo = produto.Saldo
+                Saldo = produto.Saldo,
+                Status = produto.Status
             };
             return Ok(produtoResponseDTO);
         }
@@ -77,7 +78,8 @@ public class ProdutosController : ControllerBase
                 Id = produto.Id,
                 Codigo = produto.Codigo,
                 Descricao = produto.Descricao,
-                Saldo = produto.Saldo
+                Saldo = produto.Saldo,
+                Status = produto.Status
             }).ToList();
 
             return Ok(produtosResponseDTO);

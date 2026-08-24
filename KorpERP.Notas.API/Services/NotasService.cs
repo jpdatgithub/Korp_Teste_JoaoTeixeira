@@ -159,6 +159,7 @@ public class NotasService : INotasService
             {
                 ProdutoId = item.ProdutoId,
                 Quantidade = item.Quantidade,
+                Processado = true,
                 NotaId = notaId,
                 Nota = nota
             });

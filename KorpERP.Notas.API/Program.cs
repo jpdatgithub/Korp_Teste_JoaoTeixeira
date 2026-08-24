@@ -2,6 +2,10 @@ using MassTransit;
 using KorpERP.Notas.API.Persistence;
 using Microsoft.EntityFrameworkCore;
 using KorpERP.Notas.API.Consumers;
+using KorpERP.Notas.API.Interfaces;
+using KorpERP.Notas.API.Services;
+using KorpERP.Notas.API.Infrastructure;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +14,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AngularDevelopment", policy =>
+        policy.WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
+builder.Services.AddScoped<IProdutoProjectionService, ProdutoProjectionService>();
+builder.Services.AddScoped<INotasService, NotasService>();
+builder.Services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
 
 builder.Services.AddDbContext<NotasDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -43,6 +59,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AngularDevelopment");
 
 app.UseAuthorization();
 

@@ -40,6 +40,10 @@ public class NotasController : ControllerBase
         {
             return NotFound(ex.Message);
         }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
         catch (Exception ex)
         {
             return BadRequest(ex.Message);

@@ -44,12 +44,28 @@ public class NotasService : INotasService
     public async Task<Nota> GetNotaByIdAsync(int notaId)
     {
         var nota = await _context.Notas
-            .Include(n => n.Itens)
             .FirstOrDefaultAsync(n => n.Id == notaId);
 
         if (nota == null)
         {
             throw new KeyNotFoundException($"Nota com ID {notaId} não encontrada.");
+        }
+
+        if (nota.Status == SharedStatusNota.Fechada && !nota.EmProcessamento)
+        {
+            await _context.Entry(nota)
+                .Collection(n => n.ItensProcessados)
+                .LoadAsync();
+
+            await _context.Entry(nota)
+                .Collection(n => n.ItensFalhados)
+                .LoadAsync();
+        }
+        else
+        {
+            await _context.Entry(nota)
+                .Collection(n => n.Itens)
+                .LoadAsync();
         }
 
         return nota;
@@ -58,6 +74,8 @@ public class NotasService : INotasService
     {
         return await _context.Notas
             .Include(n => n.Itens)
+            .Include(n => n.ItensProcessados)
+            .Include(n => n.ItensFalhados)
             .ToListAsync();
     }
     public async Task<Nota> AtualizarNotaAsync(int notaId, List<NotaFiscalItem> novosItens)
@@ -69,6 +87,11 @@ public class NotasService : INotasService
         if (nota == null)
         {
             throw new KeyNotFoundException($"Nota com ID {notaId} não encontrada.");
+        }
+
+        if (nota.Status == SharedStatusNota.Fechada)
+        {
+            throw new InvalidOperationException($"A nota {notaId} já está fechada e não pode ser atualizada.");
         }
 
         nota.Itens = novosItens;

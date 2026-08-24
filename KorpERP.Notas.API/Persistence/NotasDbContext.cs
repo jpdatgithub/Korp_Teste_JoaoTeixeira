@@ -20,5 +20,10 @@ public class NotasDbContext : DbContext
             .HasMany(n => n.Itens)
             .WithOne(i => i.Nota)
             .HasForeignKey(i => i.NotaId);
+
+        modelBuilder.Entity<Nota>()
+            .HasMany(n => n.ItensFalhados)
+            .WithOne(i => i.Nota)
+            .HasForeignKey(i => i.NotaId);
     }
 }

@@ -157,7 +157,7 @@ namespace KorpERP.Produtos.API.Services
             catch (DbUpdateException exception) when (NotaProcessadaDuplicada(exception))
             {
                 await transaction.RollbackAsync();
-                _context.Entry(notaProcessada).State = EntityState.Detached;
+                _context.ChangeTracker.Clear();
                 return;
             }
 

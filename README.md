@@ -22,7 +22,7 @@ Clone o repositório e entre na pasta do projeto:
 
 ```powershell
 git clone <URL_DO_REPOSITORIO>
-cd TesteDeEmprego
+cd Korp_Teste_JoaoTeixeira
 ```
 
 Inicie os bancos de dados e o RabbitMQ:
@@ -47,18 +47,4 @@ Inicie as APIs e o frontend:
 
 ```powershell
 .\run.ps1
-```
-
-## Encerrar os containers
-
-Para encerrar e remover os containers preservando os dados:
-
-```powershell
-docker compose down
-```
-
-Para também remover os volumes e apagar os dados dos bancos:
-
-```powershell
-docker compose down -v
 ```

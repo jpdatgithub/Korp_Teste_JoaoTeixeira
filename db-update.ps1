@@ -1,6 +1,7 @@
 Push-Location $PSScriptRoot
 
 try {
+    dotnet restore .\KorpERP.sln
     Write-Host "Atualizando banco de Produtos..."
     dotnet ef database update --project ./KorpERP.Produtos.API --startup-project ./KorpERP.Produtos.API -- --environment Development
 

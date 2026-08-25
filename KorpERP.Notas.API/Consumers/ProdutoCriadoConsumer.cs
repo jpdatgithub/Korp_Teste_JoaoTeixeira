@@ -15,7 +15,7 @@ namespace KorpERP.Notas.API.Consumers
         public Task Consume(ConsumeContext<ProdutoCriadoEvent> context)
         {
             var message = context.Message;
-            return _produtoProjectionService.CreateProdutoProjectionAsync(message.ProdutoId, message.Codigo, message.Descricao);
+            return _produtoProjectionService.CreateProdutoProjectionAsync(message.ProdutoId, message.Codigo, message.Descricao, message.Versao);
         }
     }
 }

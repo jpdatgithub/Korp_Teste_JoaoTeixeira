@@ -29,7 +29,16 @@ builder.Services.AddDbContext<ProdutosDbContext>(options =>
 
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<NotaFiscalProcessadaConsumer>();
+    x.AddConsumer<NotaFiscalProcessadaConsumer>(consumer =>
+    {
+        consumer.UseMessageRetry(retry =>
+        {
+            retry.Handle<DbUpdateConcurrencyException>();
+            retry.Intervals(
+                TimeSpan.FromMilliseconds(50),
+                TimeSpan.FromMilliseconds(100));
+        });
+    });
 
     x.UsingRabbitMq((context, cfg) =>
     {

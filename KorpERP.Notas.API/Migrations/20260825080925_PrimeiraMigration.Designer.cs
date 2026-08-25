@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KorpERP.Notas.API.Migrations
 {
     [DbContext(typeof(NotasDbContext))]
-    [Migration("20260825022207_PrimeiraMigration")]
+    [Migration("20260825080925_PrimeiraMigration")]
     partial class PrimeiraMigration
     {
         /// <inheritdoc />
@@ -153,6 +153,12 @@ namespace KorpERP.Notas.API.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<long>("Versao")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(1L);
 
                     b.HasKey("ProdutoProjectionId");
 

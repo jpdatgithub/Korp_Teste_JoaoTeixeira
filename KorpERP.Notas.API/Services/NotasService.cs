@@ -154,45 +154,54 @@ public class NotasService : INotasService
     }
     public async Task<Nota> ConcluirNotaAsync(int notaId, List<SharedNotaFiscalItemFalhou> eventItensFalhados, List<SharedNotaFiscalItem> eventItensProcessados)
     {
-        var itensFalhados = new List<NotaFiscalItemFalhou>();
-        var itensProcessados = new List<NotaFiscalItemProcessado>();
+        await using var transaction = await _context.Database.BeginTransactionAsync();
 
-        var nota = await _context.Notas.FindAsync(notaId);
+        var notasAtualizadas = await _context.Notas
+            .Where(n => n.Id == notaId
+                && n.Status == SharedStatusNota.Fechada
+                && n.EmProcessamento)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(n => n.EmProcessamento, false));
 
-        if (nota == null)
+        var nota = await _context.Notas
+            .Include(n => n.ItensProcessados)
+            .Include(n => n.ItensFalhados)
+            .FirstOrDefaultAsync(n => n.Id == notaId);
+
+        if (nota is null)
         {
             throw new KeyNotFoundException($"Nota com ID {notaId} não encontrada.");
         }
 
-        foreach (var item in eventItensFalhados)
+        if (notasAtualizadas == 0)
         {
-            itensFalhados.Add(new NotaFiscalItemFalhou
+            return nota;
+        }
+
+        nota.ItensFalhados = eventItensFalhados
+            .Select(item => new NotaFiscalItemFalhou
             {
                 ProdutoId = item.ProdutoId,
                 Quantidade = item.Quantidade,
                 MotivoFalha = item.MotivoFalha,
                 NotaId = notaId,
                 Nota = nota
-            });
-        }
+            })
+            .ToList();
 
-        foreach (var item in eventItensProcessados)
-        {
-            itensProcessados.Add(new NotaFiscalItemProcessado
+        nota.ItensProcessados = eventItensProcessados
+            .Select(item => new NotaFiscalItemProcessado
             {
                 ProdutoId = item.ProdutoId,
                 Quantidade = item.Quantidade,
                 Processado = true,
                 NotaId = notaId,
                 Nota = nota
-            });
-        }
-
-        nota.ItensFalhados = itensFalhados;
-        nota.ItensProcessados = itensProcessados;
-        nota.EmProcessamento = false;
+            })
+            .ToList();
 
         await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
 
         return nota;
     }

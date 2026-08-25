@@ -16,6 +16,13 @@ public class NotasDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<ProdutoProjection>(entity =>
+        {
+            entity.Property(produto => produto.Versao)
+                .IsConcurrencyToken()
+                .HasDefaultValue(1L);
+        });
+
         modelBuilder.Entity<Nota>()
             .HasMany(n => n.Itens)
             .WithOne(i => i.Nota)

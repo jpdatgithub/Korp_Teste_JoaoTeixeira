@@ -33,7 +33,17 @@ builder.Services.AddDbContext<NotasDbContext>(options =>
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<ProdutoCriadoConsumer>();
-    x.AddConsumer<ProdutoAtualizadoConsumer>();
+    x.AddConsumer<ProdutoAtualizadoConsumer>(consumer =>
+    {
+        consumer.UseDelayedRedelivery(redelivery =>
+            redelivery.Intervals(
+                TimeSpan.FromMilliseconds(200),
+                TimeSpan.FromSeconds(1),
+                TimeSpan.FromSeconds(3)));
+
+        consumer.UseMessageRetry(retry =>
+            retry.Immediate(2));
+    });
     x.AddConsumer<EstoqueAtualizadoConsumer>(consumer =>
     {
         consumer.UseDelayedRedelivery(redelivery =>

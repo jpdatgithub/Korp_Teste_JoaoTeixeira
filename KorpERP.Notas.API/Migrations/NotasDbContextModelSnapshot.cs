@@ -151,6 +151,12 @@ namespace KorpERP.Notas.API.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<long>("Versao")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(1L);
+
                     b.HasKey("ProdutoProjectionId");
 
                     b.ToTable("Produtos");

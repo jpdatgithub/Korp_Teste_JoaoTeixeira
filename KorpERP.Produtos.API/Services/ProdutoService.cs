@@ -6,6 +6,7 @@ using KorpERP.Shared.Events;
 using Microsoft.EntityFrameworkCore;
 using KorpERP.Shared.Contracts.Produto;
 using KorpERP.Shared.Contracts.NotaFiscal;
+using Npgsql;
 
 namespace KorpERP.Produtos.API.Services
 {
@@ -30,6 +31,7 @@ namespace KorpERP.Produtos.API.Services
                 ProdutoId = produto.Id,
                 Codigo = produto.Codigo,
                 Descricao = produto.Descricao,
+                Versao = produto.Versao,
                 DataCriacao = DateTime.UtcNow
             });
 
@@ -39,6 +41,7 @@ namespace KorpERP.Produtos.API.Services
                 {
                     ProdutoId = produto.Id,
                     NovoSaldo = produto.Saldo,
+                    Versao = produto.Versao,
                     DataAtualizacao = DateTime.UtcNow
                 });
             }
@@ -60,6 +63,12 @@ namespace KorpERP.Produtos.API.Services
             produto.Saldo = novoSaldo;
             produto.Codigo = novoCodigo;
             produto.Descricao = novaDescricao;
+
+            if (saldoAlterado || produtoAlterado)
+            {
+                produto.Versao++;
+            }
+
             await _context.SaveChangesAsync();
 
             var dataAtualizacao = DateTime.UtcNow;
@@ -70,6 +79,7 @@ namespace KorpERP.Produtos.API.Services
                 {
                     ProdutoId = produto.Id,
                     NovoSaldo = novoSaldo,
+                    Versao = produto.Versao,
                     DataAtualizacao = dataAtualizacao
                 });
             }
@@ -81,6 +91,7 @@ namespace KorpERP.Produtos.API.Services
                     ProdutoId = produto.Id,
                     Codigo = novoCodigo,
                     Descricao = novaDescricao,
+                    Versao = produto.Versao,
                     DataAtualizacao = dataAtualizacao
                 });
             }
@@ -112,34 +123,53 @@ namespace KorpERP.Produtos.API.Services
             }
 
             produto.Status = StatusProduto.Inativo;
+            produto.Versao++;
+
+            await _context.SaveChangesAsync();
 
             await _eventPublisher.PublishAsync(new ProdutoDesativadoEvent
             {
                 ProdutoId = produto.Id,
+                Versao = produto.Versao,
                 DataDesativacao = DateTime.UtcNow
             });
-
-            await _context.SaveChangesAsync();
         }
         public async Task ProcessarNotaFiscalAsync(int notaFiscalId, List<NotaFiscalItem> itens)
         {
             var itensFalhos = new List<NotaFiscalItemFalhou>();
             var itensOk = new List<NotaFiscalItem>();
-            var estoqueAtualizadoEvents = new List<EstoqueAtualizadoEvent>();
+            var saldosAtualizados = new Dictionary<int, int>();
+            var produtosAlterados = new HashSet<int>();
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
-            var produtos = new Dictionary<int, Produto>();
-            foreach (var produtoId in itens.Select(item => item.ProdutoId).Distinct().OrderBy(id => id))
+            var notaProcessada = new NotaProcessada
             {
-                var produto = await _context.Produtos
-                    .FromSqlInterpolated($"SELECT * FROM \"Produtos\" WHERE \"Id\" = {produtoId} FOR UPDATE")
-                    .SingleOrDefaultAsync();
+                NotaFiscalId = notaFiscalId,
+                DataProcessamento = DateTime.UtcNow
+            };
 
-                if (produto != null)
-                {
-                    produtos.Add(produtoId, produto);
-                }
+            _context.NotasProcessadas.Add(notaProcessada);
+
+            try
+            {
+                await _context.SaveChangesAsync();
             }
+            catch (DbUpdateException exception) when (NotaProcessadaDuplicada(exception))
+            {
+                await transaction.RollbackAsync();
+                _context.Entry(notaProcessada).State = EntityState.Detached;
+                return;
+            }
+
+            var produtoIds = itens
+                .Select(item => item.ProdutoId)
+                .Distinct()
+                .ToList();
+
+            var produtos = await _context.Produtos
+                .Where(produto => produtoIds.Contains(produto.Id))
+                .OrderBy(produto => produto.Id)
+                .ToDictionaryAsync(produto => produto.Id);
 
             foreach (var item in itens)
             {
@@ -179,36 +209,48 @@ namespace KorpERP.Produtos.API.Services
                         });
 
                         produto.Saldo = 0;
+                        produtosAlterados.Add(produto.Id);
 
-                        estoqueAtualizadoEvents.Add(new EstoqueAtualizadoEvent
-                        {
-                            ProdutoId = produto.Id,
-                            NovoSaldo = produto.Saldo,
-                            DataAtualizacao = DateTime.UtcNow
-                        });
+                        saldosAtualizados[produto.Id] = produto.Saldo;
                     }
                     else
                     {
                         produto.Saldo -= item.Quantidade;
+                        produtosAlterados.Add(produto.Id);
 
                         itensOk.Add(item);
 
-                        estoqueAtualizadoEvents.Add(new EstoqueAtualizadoEvent
-                        {
-                            ProdutoId = produto.Id,
-                            NovoSaldo = produto.Saldo,
-                            DataAtualizacao = DateTime.UtcNow
-                        });
+                        saldosAtualizados[produto.Id] = produto.Saldo;
                     }
                 }
             }
 
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            foreach (var estoqueEvent in estoqueAtualizadoEvents)
+            foreach (var produtoId in produtosAlterados)
             {
-                await _eventPublisher.PublishAsync(estoqueEvent);
+                produtos[produtoId].Versao++;
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync();
+                _context.ChangeTracker.Clear();
+                throw;
+            }
+
+            foreach (var (produtoId, novoSaldo) in saldosAtualizados)
+            {
+                await _eventPublisher.PublishAsync(new EstoqueAtualizadoEvent
+                {
+                    ProdutoId = produtoId,
+                    NovoSaldo = novoSaldo,
+                    Versao = produtos[produtoId].Versao,
+                    DataAtualizacao = DateTime.UtcNow
+                });
             }
 
             await _eventPublisher.PublishAsync(new ProcessamentoDeNotaConcluidoEvent
@@ -217,6 +259,15 @@ namespace KorpERP.Produtos.API.Services
                 Itens = itensOk,
                 ItensFalhos = itensFalhos
             });
+        }
+
+        private static bool NotaProcessadaDuplicada(DbUpdateException exception)
+        {
+            return exception.InnerException is PostgresException
+            {
+                SqlState: PostgresErrorCodes.UniqueViolation,
+                ConstraintName: "PK_notasProcessadas"
+            };
         }
     }
 }

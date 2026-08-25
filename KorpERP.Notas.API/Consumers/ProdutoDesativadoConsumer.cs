@@ -15,7 +15,7 @@ namespace KorpERP.Notas.API.Consumers
         public Task Consume(ConsumeContext<ProdutoDesativadoEvent> context)
         {
             var message = context.Message;
-            return _produtoProjectionService.DesativarProdutoProjectionAsync(message.ProdutoId);
+            return _produtoProjectionService.DesativarProdutoProjectionAsync(message.ProdutoId, message.Versao);
         }
     }
 }

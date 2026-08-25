@@ -9,5 +9,6 @@ namespace KorpERP.Produtos.API.Models
         public string Descricao { get; set; } = string.Empty;
         public int Saldo { get; set; } = 0;
         public StatusProduto Status { get; set; } = StatusProduto.Ativo;
+        public long Versao { get; set; } = 1;
     }
 }

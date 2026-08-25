@@ -37,7 +37,8 @@ namespace KorpERP.Notas.API.Migrations
                     Codigo = table.Column<string>(type: "text", nullable: false),
                     Descricao = table.Column<string>(type: "text", nullable: false),
                     Saldo = table.Column<int>(type: "integer", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false)
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    Versao = table.Column<long>(type: "bigint", nullable: false, defaultValue: 1L)
                 },
                 constraints: table =>
                 {

@@ -15,7 +15,7 @@ namespace KorpERP.Notas.API.Consumers
         public Task Consume(ConsumeContext<EstoqueAtualizadoEvent> context)
         {
             var message = context.Message;
-            return _produtoProjectionService.AtualizarEstoqueAsync(message.ProdutoId, message.NovoSaldo);
+            return _produtoProjectionService.AtualizarEstoqueAsync(message.ProdutoId, message.NovoSaldo, message.Versao);
         }
     }
 }

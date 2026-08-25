@@ -17,23 +17,14 @@ public class ProdutoProjectionService : IProdutoProjectionService
 
     public async Task CreateProdutoProjectionAsync(int produtoId, string codigo = "", string descricao = "")
     {
-        var produtoProjection = await _context.Produtos.FindAsync(produtoId);
-        if (produtoProjection == null)
+        var produtoProjection = new ProdutoProjection
         {
-            produtoProjection = new ProdutoProjection
-            {
-                ProdutoProjectionId = produtoId,
-                Codigo = codigo,
-                Descricao = descricao
-            };
+            ProdutoProjectionId = produtoId,
+            Codigo = codigo,
+            Descricao = descricao
+        };
 
-            _context.Produtos.Add(produtoProjection);
-        }
-        else
-        {
-            produtoProjection.Codigo = codigo;
-            produtoProjection.Descricao = descricao;
-        }
+        _context.Produtos.Add(produtoProjection);
         await _context.SaveChangesAsync();
     }
 
@@ -42,11 +33,7 @@ public class ProdutoProjectionService : IProdutoProjectionService
         var produtoProjection = await _context.Produtos.FindAsync(produtoId);
         if (produtoProjection == null)
         {
-            _context.Produtos.Add(new ProdutoProjection
-            {
-                ProdutoProjectionId = produtoId,
-                Saldo = novoSaldo
-            });
+            throw new KeyNotFoundException($"ProdutoProjection com ID {produtoId} não encontrado.");
         }
         else
         {

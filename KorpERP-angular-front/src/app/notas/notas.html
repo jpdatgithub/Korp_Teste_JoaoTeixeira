@@ -70,7 +70,8 @@
             <div>
                 @if (notaConcluida(); as nota) {
                 <h2>Resultado do processamento</h2>
-                <span>{{ nota.itensOk.length }} OK, {{ nota.itensFalhados.length }} falhados</span>
+                <span>{{ somarQuantidades(nota.itensOk) }} OK, {{ somarQuantidades(nota.itensFalhados) }}
+                    falhados</span>
                 } @else {
                 <h2>Itens da nota</h2>
                 <span>{{ itensRascunho().length }} {{ itensRascunho().length === 1 ? 'item' : 'itens' }}</span>
@@ -86,7 +87,7 @@
             <section class="result-section" aria-labelledby="itens-ok-title">
                 <div class="result-section-heading">
                     <h3 id="itens-ok-title">Itens OK</h3>
-                    <span>{{ nota.itensOk.length }}</span>
+                    <span>{{ somarQuantidades(nota.itensOk) }}</span>
                 </div>
                 <div class="items-list result-list success-list">
                     <div class="result-columns success-columns" aria-hidden="true">
@@ -121,7 +122,7 @@
             <section class="result-section failed-section" aria-labelledby="itens-falhados-title">
                 <div class="result-section-heading">
                     <h3 id="itens-falhados-title">Itens falhados</h3>
-                    <span>{{ nota.itensFalhados.length }}</span>
+                    <span>{{ somarQuantidades(nota.itensFalhados) }}</span>
                 </div>
                 <div class="items-list result-list failed-list">
                     <div class="result-columns failed-columns" aria-hidden="true">

@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { finalize, retry, Subject, switchMap, takeUntil, takeWhile, timer } from 'rxjs';
+import { finalize, retry, Subscription, switchMap, takeWhile, timer } from 'rxjs';
 import { NotaDataService } from './nota-data.service';
 import {
   Nota,
@@ -36,7 +36,7 @@ export class Notas {
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly cancelarPolling = new Subject<void>();
+  private readonly pollings = new Map<number, Subscription>();
 
   protected readonly notas = signal<Nota[]>([]);
   protected readonly produtos = signal<ProdutoProjection[]>([]);
@@ -75,8 +75,6 @@ export class Notas {
   }
 
   protected selecionarNota(id: number | null): void {
-    this.cancelarPolling.next();
-
     if (id === null) {
       this.novaNota();
       return;
@@ -105,7 +103,6 @@ export class Notas {
   }
 
   protected novaNota(): void {
-    this.cancelarPolling.next();
     this.notaSelecionadaId.set(null);
     this.itensRascunho.set([]);
     this.editando.set(true);
@@ -226,6 +223,10 @@ export class Notas {
     return nota.status === StatusNota.Fechada ? 'Fechada' : 'Aberta';
   }
 
+  protected somarQuantidades(itens: NotaFiscalItem[]): number {
+    return itens.reduce((total, item) => total + item.quantidade, 0);
+  }
+
   private salvar(): void {
     if (!this.podeSalvar()) {
       return;
@@ -273,25 +274,33 @@ export class Notas {
   }
 
   private acompanharProcessamento(notaId: number): void {
-    this.cancelarPolling.next();
-    timer(0, 3000)
+    if (this.pollings.has(notaId)) {
+      return;
+    }
+
+    const polling = timer(0, 3000)
       .pipe(
         switchMap(() => this.notaService.obter(notaId).pipe(
           retry({ count: 2, delay: 1000 }),
         )),
         takeWhile((nota) => nota.emProcessamento, true),
-        takeUntil(this.cancelarPolling),
         takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.pollings.delete(notaId)),
       )
       .subscribe({
         next: (nota) => {
           this.atualizarNotaNaLista(nota);
           if (!nota.emProcessamento) {
-            this.itensRascunho.set(this.copiarItens(nota.itens));
+            if (this.notaSelecionadaId() === notaId) {
+              this.itensRascunho.set(this.copiarItens(nota.itens));
+            }
+            this.carregarProdutos();
           }
         },
         error: () => this.exibirErro('Nao foi possivel acompanhar o processamento da nota.'),
       });
+
+    this.pollings.set(notaId, polling);
   }
 
   private atualizarNotaNaLista(notaAtualizada: Nota): void {

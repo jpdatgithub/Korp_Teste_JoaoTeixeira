@@ -126,12 +126,24 @@ namespace KorpERP.Produtos.API.Services
             var itensFalhos = new List<NotaFiscalItemFalhou>();
             var itensOk = new List<NotaFiscalItem>();
             var estoqueAtualizadoEvents = new List<EstoqueAtualizadoEvent>();
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            var produtos = new Dictionary<int, Produto>();
+            foreach (var produtoId in itens.Select(item => item.ProdutoId).Distinct().OrderBy(id => id))
+            {
+                var produto = await _context.Produtos
+                    .FromSqlInterpolated($"SELECT * FROM \"Produtos\" WHERE \"Id\" = {produtoId} FOR UPDATE")
+                    .SingleOrDefaultAsync();
+
+                if (produto != null)
+                {
+                    produtos.Add(produtoId, produto);
+                }
+            }
 
             foreach (var item in itens)
             {
-                var produto = await _context.Produtos.FindAsync(item.ProdutoId);
-
-                if (produto == null)
+                if (!produtos.TryGetValue(item.ProdutoId, out var produto))
                 {
                     itensFalhos.Add(new NotaFiscalItemFalhou
                     {
@@ -189,21 +201,22 @@ namespace KorpERP.Produtos.API.Services
                         });
                     }
                 }
-
-                await _context.SaveChangesAsync();
-
-                foreach (var estoqueEvent in estoqueAtualizadoEvents)
-                {
-                    await _eventPublisher.PublishAsync(estoqueEvent);
-                }
-
-                await _eventPublisher.PublishAsync(new ProcessamentoDeNotaConcluidoEvent
-                {
-                    NotaFiscalId = notaFiscalId,
-                    Itens = itensOk,
-                    ItensFalhos = itensFalhos
-                });
             }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            foreach (var estoqueEvent in estoqueAtualizadoEvents)
+            {
+                await _eventPublisher.PublishAsync(estoqueEvent);
+            }
+
+            await _eventPublisher.PublishAsync(new ProcessamentoDeNotaConcluidoEvent
+            {
+                NotaFiscalId = notaFiscalId,
+                Itens = itensOk,
+                ItensFalhos = itensFalhos
+            });
         }
     }
 }

@@ -177,7 +177,7 @@ describe('Notas', () => {
     expect(element.querySelector('.failed-list')).toBeNull();
   });
 
-  it('processa a nota e atualiza o resultado ao concluir o polling', () => {
+  it('processa a nota e atualiza o resultado em background mesmo apos desselecionar', () => {
     vi.useFakeTimers();
     notas.selecionarNota(1001);
     const service = TestBed.inject(NotaDataService);
@@ -195,6 +195,7 @@ describe('Notas', () => {
       itensFalhados: [{ produtoId: 2, quantidade: 2, motivoFalha: 'Saldo insuficiente' }],
     };
     const processar = vi.spyOn(service, 'processar').mockReturnValue(of(emProcessamento));
+    const listarProdutos = vi.spyOn(service, 'listarProdutos');
     const obter = vi.spyOn(service, 'obter')
       .mockReturnValueOnce(of(emProcessamento))
       .mockReturnValueOnce(of(concluida));
@@ -204,15 +205,21 @@ describe('Notas', () => {
 
     expect(processar).toHaveBeenCalledWith(1001);
     expect(obter).toHaveBeenCalledTimes(1);
+    expect(listarProdutos).not.toHaveBeenCalled();
     expect(notas.notaSelecionada()?.emProcessamento).toBe(true);
+
+    notas.novaNota();
+    expect(notas.notaSelecionada()).toBeNull();
 
     vi.advanceTimersByTime(3000);
     fixture.detectChanges();
 
     expect(obter).toHaveBeenCalledTimes(2);
-    expect(notas.notaSelecionada()?.emProcessamento).toBe(false);
-    expect(notas.notaSelecionada()?.itensOk).toEqual([{ produtoId: 1, quantidade: 4 }]);
-    expect(fixture.nativeElement.textContent).toContain('Resultado do processamento');
+    expect(listarProdutos).toHaveBeenCalledOnce();
+    expect(notas.notaSelecionada()).toBeNull();
+    expect(notas.notas().find((nota) => nota.id === 1001)?.emProcessamento).toBe(false);
+    expect(notas.notas().find((nota) => nota.id === 1001)?.itensOk)
+      .toEqual([{ produtoId: 1, quantidade: 4 }]);
 
     vi.advanceTimersByTime(6000);
     expect(obter).toHaveBeenCalledTimes(2);

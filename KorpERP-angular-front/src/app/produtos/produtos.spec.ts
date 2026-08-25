@@ -46,8 +46,6 @@ describe('Produtos', () => {
   });
 
   it('seleciona o produto pelo botao de editar da linha', () => {
-    const scrollIntoView = vi.fn();
-    fixture.nativeElement.scrollIntoView = scrollIntoView;
     const botaoEditar = fixture.nativeElement.querySelector(
       'button[aria-label="Editar PRD-001"]',
     ) as HTMLButtonElement;
@@ -60,7 +58,6 @@ describe('Produtos', () => {
       descricao: 'Parafuso sextavado',
       saldo: 24,
     });
-    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
   });
 
   it('desabilita a desativacao para um produto inativo', () => {

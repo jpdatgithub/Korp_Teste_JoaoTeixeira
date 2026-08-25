@@ -1,4 +1,4 @@
-import { Component, computed, ElementRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -32,7 +32,6 @@ import { Produto, StatusProduto } from './produto.model';
 export class Produtos implements OnInit {
   private readonly produtoService = inject(ProdutoDataService);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly produtos = signal<Produto[]>([]);
   protected readonly selecionadoId = signal<number | null>(null);
@@ -104,7 +103,6 @@ export class Produtos implements OnInit {
 
   protected editarProduto(id: number): void {
     this.selecionarProduto(id);
-    this.elementRef.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   protected salvar(): void {

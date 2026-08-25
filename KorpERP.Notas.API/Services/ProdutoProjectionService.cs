@@ -22,7 +22,7 @@ public class ProdutoProjectionService : IProdutoProjectionService
         {
             produtoProjection = new ProdutoProjection
             {
-                ProdutoId = produtoId,
+                ProdutoProjectionId = produtoId,
                 Codigo = codigo,
                 Descricao = descricao
             };
@@ -44,7 +44,7 @@ public class ProdutoProjectionService : IProdutoProjectionService
         {
             _context.Produtos.Add(new ProdutoProjection
             {
-                ProdutoId = produtoId,
+                ProdutoProjectionId = produtoId,
                 Saldo = novoSaldo
             });
         }

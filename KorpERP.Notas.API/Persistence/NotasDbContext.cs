@@ -22,6 +22,11 @@ public class NotasDbContext : DbContext
             .HasForeignKey(i => i.NotaId);
 
         modelBuilder.Entity<Nota>()
+            .HasMany(n => n.ItensProcessados)
+            .WithOne(i => i.Nota)
+            .HasForeignKey(i => i.NotaId);
+
+        modelBuilder.Entity<Nota>()
             .HasMany(n => n.ItensFalhados)
             .WithOne(i => i.Nota)
             .HasForeignKey(i => i.NotaId);

@@ -155,7 +155,7 @@ public class NotasService : INotasService
     public async Task<Nota> ConcluirNotaAsync(int notaId, List<SharedNotaFiscalItemFalhou> eventItensFalhados, List<SharedNotaFiscalItem> eventItensProcessados)
     {
         var itensFalhados = new List<NotaFiscalItemFalhou>();
-        var itensProcessados = new List<NotaFiscalItem>();
+        var itensProcessados = new List<NotaFiscalItemProcessado>();
 
         var nota = await _context.Notas.FindAsync(notaId);
 
@@ -178,7 +178,7 @@ public class NotasService : INotasService
 
         foreach (var item in eventItensProcessados)
         {
-            itensProcessados.Add(new NotaFiscalItem
+            itensProcessados.Add(new NotaFiscalItemProcessado
             {
                 ProdutoId = item.ProdutoId,
                 Quantidade = item.Quantidade,

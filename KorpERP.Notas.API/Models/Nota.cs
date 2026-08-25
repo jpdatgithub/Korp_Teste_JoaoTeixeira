@@ -6,7 +6,7 @@ public class Nota
 {
     public int Id { get; set; }
     public List<NotaFiscalItem> Itens { get; set; } = new List<NotaFiscalItem>();
-    public List<NotaFiscalItem> ItensProcessados { get; set; } = new List<NotaFiscalItem>();
+    public List<NotaFiscalItemProcessado> ItensProcessados { get; set; } = new List<NotaFiscalItemProcessado>();
     public List<NotaFiscalItemFalhou> ItensFalhados { get; set; } = new List<NotaFiscalItemFalhou>();
     public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
     public DateTime? DataFechamento { get; set; }

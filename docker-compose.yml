@@ -1,0 +1,3 @@
+include:
+  - path: ./KorpERP.Produtos.API/docker-compose.yml
+  - path: ./KorpERP.Notas.API/docker-compose.yml

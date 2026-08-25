@@ -1,0 +1,15 @@
+services:
+  produtos-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: korperp_produtos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "123456"
+    ports:
+      - "5432:5432"
+    volumes:
+      - produtos-data:/var/lib/postgresql/data
+
+volumes:
+  produtos-data:
+    name: korperp_produtos_data

@@ -34,7 +34,8 @@ docker compose up -d
 Instale as dependências do frontend:
 
 ```powershell
-npm install --prefix .\KorpERP-angular-front
+cd .\KorpERP-angular-front\
+npm install
 ```
 
 Atualize os bancos de dados:

@@ -1,0 +1,303 @@
+<section class="notas-page" aria-labelledby="notas-title">
+    <header class="page-header">
+        <span class="eyebrow">Movimentacoes</span>
+        <h1 id="notas-title">Notas fiscais</h1>
+        <p>Monte e gerencie os itens das notas fiscais.</p>
+    </header>
+
+    <div class="editor">
+        <div class="editor-heading">
+            <mat-form-field appearance="outline" class="note-select">
+                <mat-label>Nota</mat-label>
+                <mat-select [value]="notaSelecionadaId()" (valueChange)="selecionarNota($event)">
+                    <mat-option [value]="null">Nova nota</mat-option>
+                    @for (nota of notas(); track nota.id) {
+                    <mat-option [value]="nota.id">Nota #{{ nota.id }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+
+            <div class="actions">
+                <button matIconButton type="button" aria-label="Nova nota" matTooltip="Nova nota"
+                    [disabled]="notaSelecionadaId() === null" (click)="novaNota()">
+                    <mat-icon>add</mat-icon>
+                </button>
+                <button matIconButton type="button" aria-label="Excluir nota" matTooltip="Excluir nota"
+                    [disabled]="notaSelecionadaId() === null" (click)="excluirNota()">
+                    <mat-icon>close</mat-icon>
+                </button>
+                <button matButton="filled" type="button" [attr.aria-label]="editando() ? 'Salvar nota' : 'Editar nota'"
+                    [disabled]="(editando() && !podeSalvar()) || notaSelecionada()?.status === StatusNota.Fechada"
+                    (click)="editarOuSalvar()">
+                    <mat-icon>{{ editando() ? 'save' : 'edit' }}</mat-icon>
+                    {{ editando() ? 'Salvar' : 'Editar' }}
+                </button>
+                <button matButton="outlined" type="button" aria-label="Imprimir nota"
+                    [disabled]="notaSelecionadaId() === null || notaSelecionada()?.status === StatusNota.Fechada || processandoNota()"
+                    (click)="processarNota()">
+                    <mat-icon>print</mat-icon>
+                    Imprimir
+                </button>
+            </div>
+        </div>
+
+        <div class="metadata" aria-label="Dados da nota">
+            <div class="metadata-item">
+                <span>ID</span>
+                <strong>{{ notaSelecionada()?.id ?? 'Novo' }}</strong>
+            </div>
+            <div class="metadata-item">
+                <span>Criacao</span>
+                <strong>{{ (notaSelecionada()?.dataCriacao | date: 'dd/MM/yyyy HH:mm') ?? '-' }}</strong>
+            </div>
+            <div class="metadata-item">
+                <span>Fechamento</span>
+                <strong>{{ (notaSelecionada()?.dataFechamento | date: 'dd/MM/yyyy HH:mm') ?? '-' }}</strong>
+            </div>
+            <div class="metadata-item">
+                <span>Status</span>
+                @if (notaSelecionada(); as nota) {
+                <strong class="status" [class.closed]="nota.status === StatusNota.Fechada">
+                    {{ nomeStatus(nota) }}
+                </strong>
+                } @else {
+                <strong class="status draft">Rascunho</strong>
+                }
+            </div>
+        </div>
+
+        <div class="items-heading">
+            <div>
+                @if (notaConcluida(); as nota) {
+                <h2>Resultado do processamento</h2>
+                <span>{{ nota.itensOk.length }} OK, {{ nota.itensFalhados.length }} falhados</span>
+                } @else {
+                <h2>Itens da nota</h2>
+                <span>{{ itensRascunho().length }} {{ itensRascunho().length === 1 ? 'item' : 'itens' }}</span>
+                }
+            </div>
+            @if (editando()) {
+            <span class="editing-label"><mat-icon>edit</mat-icon> Em edicao</span>
+            }
+        </div>
+
+        @if (notaConcluida(); as nota) {
+        <div class="processing-results">
+            <section class="result-section" aria-labelledby="itens-ok-title">
+                <div class="result-section-heading">
+                    <h3 id="itens-ok-title">Itens OK</h3>
+                    <span>{{ nota.itensOk.length }}</span>
+                </div>
+                <div class="items-list result-list success-list">
+                    <div class="result-columns success-columns" aria-hidden="true">
+                        <span>Produto</span>
+                        <span>Estoque</span>
+                        <span>Quantidade</span>
+                    </div>
+                    @for (item of nota.itensOk; track $index) {
+                    <div class="result-item success-item">
+                        @if (obterProduto(item.produtoId); as produto) {
+                        <div class="product-data">
+                            <strong>{{ formatarCampoProduto(produto.codigo) }}</strong>
+                            <span>{{ formatarCampoProduto(produto.descricao) }}</span>
+                        </div>
+                        <span class="stock"><span class="mobile-label">Estoque</span>{{ produto.saldo }}</span>
+                        } @else {
+                        <div class="product-data missing-product">
+                            <strong>Produto #{{ item.produtoId }}</strong>
+                            <span>Cadastro indisponível</span>
+                        </div>
+                        <span class="stock"><span class="mobile-label">Estoque</span>-</span>
+                        }
+                        <strong class="quantity-readonly"><span class="mobile-label">Quantidade</span>{{ item.quantidade
+                            }}</strong>
+                    </div>
+                    } @empty {
+                    <p class="empty-state">Nenhum item foi processado com sucesso.</p>
+                    }
+                </div>
+            </section>
+
+            <section class="result-section failed-section" aria-labelledby="itens-falhados-title">
+                <div class="result-section-heading">
+                    <h3 id="itens-falhados-title">Itens falhados</h3>
+                    <span>{{ nota.itensFalhados.length }}</span>
+                </div>
+                <div class="items-list result-list failed-list">
+                    <div class="result-columns failed-columns" aria-hidden="true">
+                        <span>Produto</span>
+                        <span>Estoque</span>
+                        <span>Quantidade</span>
+                        <span>Motivo</span>
+                    </div>
+                    @for (item of nota.itensFalhados; track $index) {
+                    <div class="result-item failed-item">
+                        @if (obterProduto(item.produtoId); as produto) {
+                        <div class="product-data">
+                            <strong>{{ formatarCampoProduto(produto.codigo) }}</strong>
+                            <span>{{ formatarCampoProduto(produto.descricao) }}</span>
+                        </div>
+                        <span class="stock"><span class="mobile-label">Estoque</span>{{ produto.saldo }}</span>
+                        } @else {
+                        <div class="product-data missing-product">
+                            <strong>Produto #{{ item.produtoId }}</strong>
+                            <span>Cadastro indisponível</span>
+                        </div>
+                        <span class="stock"><span class="mobile-label">Estoque</span>-</span>
+                        }
+                        <strong class="quantity-readonly"><span class="mobile-label">Quantidade</span>{{ item.quantidade
+                            }}</strong>
+                        <span class="failure-reason"><span class="mobile-label">Motivo</span>{{ item.motivoFalha
+                            }}</span>
+                    </div>
+                    } @empty {
+                    <p class="empty-state">Nenhum item falhou no processamento.</p>
+                    }
+                </div>
+            </section>
+        </div>
+        } @else {
+        <div class="items-list">
+            <div class="item-columns" aria-hidden="true">
+                <span>Produto</span>
+                <span>Estoque</span>
+                <span>Quantidade</span>
+                <span></span>
+            </div>
+
+            @for (item of itensRascunho(); track item.produtoId) {
+            @if (obterProduto(item.produtoId); as produto) {
+            <div class="note-item">
+                <div class="product-data">
+                    <strong>{{ formatarCampoProduto(produto.codigo) }}</strong>
+                    <span>{{ formatarCampoProduto(produto.descricao) }}</span>
+                </div>
+                <span class="stock"><span class="mobile-label">Estoque</span>{{ produto.saldo }}</span>
+                @if (editando()) {
+                <div class="quantity-control" aria-label="Quantidade de {{ formatarCampoProduto(produto.descricao) }}">
+                    <button matIconButton type="button" aria-label="Diminuir quantidade"
+                        [disabled]="item.quantidade <= 1" (click)="decrementar(item)">
+                        <mat-icon>remove</mat-icon>
+                    </button>
+                    <strong>{{ item.quantidade }}</strong>
+                    <button matIconButton type="button" aria-label="Aumentar quantidade"
+                        [disabled]="atingiuEstoque(item)" (click)="incrementar(item)">
+                        <mat-icon>add</mat-icon>
+                    </button>
+                </div>
+                <button matIconButton type="button" aria-label="Remover {{ formatarCampoProduto(produto.descricao) }}"
+                    matTooltip="Remover item" (click)="removerItem(item.produtoId)">
+                    <mat-icon>close</mat-icon>
+                </button>
+                } @else {
+                <strong class="quantity-readonly"><span class="mobile-label">Quantidade</span>{{ item.quantidade
+                    }}</strong>
+                <span></span>
+                }
+            </div>
+            } @else {
+            <div class="note-item">
+                <div class="product-data missing-product">
+                    <strong>Produto #{{ item.produtoId }}</strong>
+                    <span>Cadastro indisponível</span>
+                </div>
+                <span class="stock"><span class="mobile-label">Estoque</span>{{ obterProduto(item.produtoId)?.saldo ??
+                    '-' }}</span>
+                @if (editando()) {
+                <div class="quantity-control" aria-label="Quantidade do produto #{{ item.produtoId }}">
+                    <button matIconButton type="button" aria-label="Diminuir quantidade"
+                        [disabled]="item.quantidade <= 1" (click)="decrementar(item)">
+                        <mat-icon>remove</mat-icon>
+                    </button>
+                    <strong>{{ item.quantidade }}</strong>
+                    <button matIconButton type="button" aria-label="Aumentar quantidade"
+                        [disabled]="atingiuEstoque(item)" (click)="incrementar(item)">
+                        <mat-icon>add</mat-icon>
+                    </button>
+                </div>
+                <button matIconButton type="button" aria-label="Remover produto #{{ item.produtoId }}"
+                    matTooltip="Remover item" (click)="removerItem(item.produtoId)">
+                    <mat-icon>close</mat-icon>
+                </button>
+                } @else {
+                <strong class="quantity-readonly"><span class="mobile-label">Quantidade</span>{{ item.quantidade
+                    }}</strong>
+                <span></span>
+                }
+            </div>
+            }
+            }
+
+            @if (editando()) {
+            <div class="add-item-row">
+                <mat-icon>add_circle_outline</mat-icon>
+                @if (produtosDisponiveis().length > 0) {
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Adicionar produto</mat-label>
+                    <mat-select [value]="null" (valueChange)="adicionarProduto($event)">
+                        @for (produto of produtosDisponiveis(); track produto.produtoId) {
+                        <mat-option [value]="produto.produtoId">
+                            {{ formatarCampoProduto(produto.codigo) }} - {{ formatarCampoProduto(produto.descricao) }}
+                            ({{ produto.saldo }} disponiveis)
+                        </mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                } @else {
+                <span class="no-products">Nenhum outro produto com estoque disponivel.</span>
+                }
+            </div>
+            } @else if (itensRascunho().length === 0) {
+            <p class="empty-state">Esta nota nao possui itens.</p>
+            }
+        </div>
+        }
+    </div>
+
+    <section class="table-section" aria-labelledby="notes-list-title">
+        <div class="table-heading">
+            <div>
+                <h2 id="notes-list-title">Notas cadastradas</h2>
+                <span>{{ notas().length }} {{ notas().length === 1 ? 'nota' : 'notas' }}</span>
+            </div>
+        </div>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Criação</th>
+                        <th>Fechamento</th>
+                        <th>Status</th>
+                        <th class="view-column"><span class="visually-hidden">Ações</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (nota of notas(); track nota.id) {
+                    <tr [class.selected-row]="nota.id === notaSelecionadaId()">
+                        <td class="note-id">#{{ nota.id }}</td>
+                        <td>{{ nota.dataCriacao | date: 'dd/MM/yyyy HH:mm' }}</td>
+                        <td>{{ (nota.dataFechamento | date: 'dd/MM/yyyy HH:mm') ?? '-' }}</td>
+                        <td>
+                            <span class="status" [class.closed]="nota.status === StatusNota.Fechada">
+                                {{ nomeStatus(nota) }}
+                            </span>
+                        </td>
+                        <td class="view-column">
+                            <button matIconButton type="button" [attr.aria-label]="'Editar nota #' + nota.id"
+                                matTooltip="Editar nota" (click)="editarNota(nota.id)">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                        </td>
+                    </tr>
+                    } @empty {
+                    <tr>
+                        <td colspan="5" class="empty-state">Nenhuma nota cadastrada.</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>

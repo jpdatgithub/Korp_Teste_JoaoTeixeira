@@ -1,0 +1,114 @@
+<section class="produtos-page" aria-labelledby="produtos-title">
+    <header class="page-header">
+        <span class="eyebrow">Cadastros</span>
+        <h1 id="produtos-title">Produtos</h1>
+        <p>Consulte e gerencie os produtos cadastrados.</p>
+    </header>
+
+    <div class="editor">
+        <div class="editor-heading">
+            <mat-form-field appearance="outline" class="product-select">
+                <mat-label>Produto</mat-label>
+                <mat-select [value]="selecionadoId()" (valueChange)="selecionarProduto($event)">
+                    <mat-option [value]="null">Novo produto</mat-option>
+                    @for (produto of produtos(); track produto.id) {
+                    <mat-option [value]="produto.id">{{ produto.codigo }} - {{ produto.descricao }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+
+            <div class="actions">
+                <button matIconButton type="button" aria-label="Novo produto" matTooltip="Novo produto"
+                    [disabled]="selecionadoId() === null || salvando()" (click)="novoProduto()">
+                    <mat-icon>add</mat-icon>
+                </button>
+                <button matButton="filled" type="button"
+                    [disabled]="!temAlteracoes() || formulario.invalid || salvando()" (click)="salvar()">
+                    <mat-icon>save</mat-icon>
+                    Salvar
+                </button>
+                <button matButton="outlined" type="button" aria-label="Desativar produto"
+                    [disabled]="!podeDesativar() || salvando()" (click)="desativar()">
+                    <mat-icon>block</mat-icon>
+                    Desativar
+                </button>
+            </div>
+        </div>
+
+        <form class="product-form" [formGroup]="formulario" (ngSubmit)="salvar()">
+            <mat-form-field appearance="outline">
+                <mat-label>Codigo</mat-label>
+                <input matInput formControlName="codigo" />
+                @if (formulario.controls.codigo.hasError('required')) {
+                <mat-error>Informe o codigo.</mat-error>
+                }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="description-field">
+                <mat-label>Descricao</mat-label>
+                <input matInput formControlName="descricao" />
+                @if (formulario.controls.descricao.hasError('required')) {
+                <mat-error>Informe a descricao.</mat-error>
+                }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+                <mat-label>Saldo</mat-label>
+                <input matInput type="number" min="0" formControlName="saldo" />
+                @if (formulario.controls.saldo.invalid) {
+                <mat-error>Informe um saldo valido.</mat-error>
+                }
+            </mat-form-field>
+        </form>
+    </div>
+
+    <div class="table-section">
+        <div class="table-heading">
+            <div>
+                <h2>Produtos existentes</h2>
+                <span>{{ produtos().length }} produtos</span>
+            </div>
+            @if (carregando()) {
+            <mat-spinner diameter="28" aria-label="Carregando produtos" />
+            }
+        </div>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codigo</th>
+                        <th>Descricao</th>
+                        <th class="numeric">Saldo</th>
+                        <th>Status</th>
+                        <th class="view-column"><span class="visually-hidden">Acoes</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (produto of produtos(); track produto.id) {
+                    <tr [class.selected-row]="produto.id === selecionadoId()">
+                        <td class="product-code">{{ produto.codigo }}</td>
+                        <td>{{ produto.descricao }}</td>
+                        <td class="numeric">{{ produto.saldo }}</td>
+                        <td>
+                            <span class="status" [class.inactive]="produto.status === StatusProduto.Inativo">
+                                {{ nomeStatus(produto.status) }}
+                            </span>
+                        </td>
+                        <td class="view-column">
+                            <button matIconButton type="button" [attr.aria-label]="'Editar ' + produto.codigo"
+                                matTooltip="Editar produto" (click)="editarProduto(produto.id)">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                        </td>
+                    </tr>
+                    } @empty {
+                    <tr>
+                        <td colspan="5" class="empty-state">Nenhum produto cadastrado.</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

@@ -10,9 +10,14 @@ namespace KorpERP.Notas.API.Controllers;
 public class NotasController : ControllerBase
 {
     private readonly INotasService _notasService;
-    public NotasController(INotasService notasService)
+    private readonly IProdutoProjectionService _produtoProjectionService;
+
+    public NotasController(
+        INotasService notasService,
+        IProdutoProjectionService produtoProjectionService)
     {
         _notasService = notasService;
+        _produtoProjectionService = produtoProjectionService;
     }
     [HttpPost(Name = "CreateNota")]
     public async Task<ActionResult<NotaResponseDTO>> CreateNota(NotaCriadaDTO notaCriadaDTO)
@@ -97,6 +102,27 @@ public class NotasController : ControllerBase
         {
             var notas = await _notasService.GetAllNotasAsync();
             return Ok(notas.Select(MapToDTO));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet("produtos", Name = "GetAllProdutoProjections")]
+    public async Task<ActionResult<IEnumerable<ProdutoProjectionResponseDTO>>> GetAllProdutoProjections()
+    {
+        try
+        {
+            var produtos = await _produtoProjectionService.GetAllProdutoProjectionsAsync();
+            return Ok(produtos.Select(produto => new ProdutoProjectionResponseDTO
+            {
+                ProdutoId = produto.ProdutoProjectionId,
+                Codigo = produto.Codigo,
+                Descricao = produto.Descricao,
+                Saldo = produto.Saldo,
+                Status = produto.Status
+            }));
         }
         catch (Exception ex)
         {

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { criarNotasMock, criarProdutosProjectionMock } from './notas.mock';
 import { NotaDataService } from './nota-data.service';
-import { Nota, NotaFiscalItem, StatusNota } from './nota.model';
+import { Nota, NotaFiscalItem, ProdutoProjection, StatusNota } from './nota.model';
 
 @Injectable()
 export class NotaMockService implements NotaDataService {
@@ -11,6 +11,10 @@ export class NotaMockService implements NotaDataService {
 
     listar(): Observable<Nota[]> {
         return of(this.notas.map((nota) => ({ ...nota, itens: this.clonarItens(nota.itens), itensOk: this.clonarItens(nota.itensOk), itensFalhados: nota.itensFalhados.map((item) => ({ ...item })) })));
+    }
+
+    listarProdutos(): Observable<ProdutoProjection[]> {
+        return of(this.produtos.map((produto) => ({ ...produto })));
     }
 
     obter(id: number): Observable<Nota> {

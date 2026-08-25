@@ -53,6 +53,16 @@ describe('Notas', () => {
     expect(component).toBeTruthy();
   });
 
+  it('carrega os produtos do servico ao inicializar', () => {
+    const service = TestBed.inject(NotaDataService);
+    const listarProdutos = vi.spyOn(service, 'listarProdutos');
+
+    component.ngOnInit();
+
+    expect(listarProdutos).toHaveBeenCalledOnce();
+    expect(notas.produtos()).not.toEqual([]);
+  });
+
   it('inicia com uma nova nota vazia em edicao', () => {
     expect(notas.notaSelecionadaId()).toBeNull();
     expect(notas.editando()).toBe(true);

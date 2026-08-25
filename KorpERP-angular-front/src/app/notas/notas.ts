@@ -16,7 +16,6 @@ import {
   StatusNota,
   StatusProdutoProjection,
 } from './nota.model';
-import { criarProdutosProjectionMock } from './notas.mock';
 
 @Component({
   imports: [
@@ -40,7 +39,7 @@ export class Notas {
   private readonly cancelarPolling = new Subject<void>();
 
   protected readonly notas = signal<Nota[]>([]);
-  protected readonly produtos = signal<ProdutoProjection[]>(criarProdutosProjectionMock());
+  protected readonly produtos = signal<ProdutoProjection[]>([]);
   protected readonly notaSelecionadaId = signal<number | null>(null);
   protected readonly editando = signal(true);
   protected readonly processandoNota = signal(false);
@@ -72,6 +71,7 @@ export class Notas {
 
   ngOnInit(): void {
     this.carregarNotas();
+    this.carregarProdutos();
   }
 
   protected selecionarNota(id: number | null): void {
@@ -259,6 +259,16 @@ export class Notas {
       .pipe(finalize(() => undefined))
       .subscribe({
         next: (notas) => this.notas.set(notas),
+      });
+  }
+
+  private carregarProdutos(): void {
+    this.notaService
+      .listarProdutos()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (produtos) => this.produtos.set(produtos),
+        error: () => this.exibirErro('Nao foi possivel carregar os produtos.'),
       });
   }
 

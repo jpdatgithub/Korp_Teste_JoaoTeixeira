@@ -1,3 +1,18 @@
 include:
   - path: ./KorpERP.Produtos.API/docker-compose.yml
   - path: ./KorpERP.Notas.API/docker-compose.yml
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+volumes:
+  rabbitmq-data:
